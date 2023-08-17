@@ -161,3 +161,5 @@ cython_debug/
 .vscode
 testes.ipynb
 teste.py
+simulation*
+requere

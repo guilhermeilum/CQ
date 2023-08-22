@@ -7,7 +7,6 @@ import numpy as np
 import imageio
 import time
 
-
 histograma = []
 colisão = []
 cada_mol = []
@@ -97,7 +96,6 @@ class sistema:
             math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas
         ]
         self.lista_combinacao = list(combinations(particulas, 2))
-        print(self.lista_combinacao[0][0].x)
 
     def simulacao_molecula(self, desenha):
         for particle in self.particulas:
@@ -107,8 +105,8 @@ class sistema:
                 particle.draw()
 
     def colisoes_mol(self):
-        for mol1_2 in self.lista_combinacao:
-            self.conta_colisao(mol1_2)
+        list(map(self.conta_colisao, self.lista_combinacao))
+
 
     def conta_colisao(self, mol1_2):
         mol1, mol2 = mol1_2

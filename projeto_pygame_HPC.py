@@ -22,11 +22,11 @@ pygame.display.set_caption("Particulas")
 NUMERO_MOLECULAS = 1000
 
 
-VEL = 40
+VEL = 500
 RAIO = 5
 MASSA = 1
 
-VEL1 = 40
+VEL1 = 500
 RAIO1 = 5
 MASSA1 = 1
 
@@ -96,6 +96,7 @@ class sistema:
             math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas
         ]
         self.lista_combinacao = list(combinations(particulas, 2))
+        self.massas = np.array([p.massa for p in particulas])
 
     def simulacao_molecula(self, desenha):
         for particle in self.particulas:
@@ -106,7 +107,6 @@ class sistema:
 
     def colisoes_mol(self):
         list(map(self.conta_colisao, self.lista_combinacao))
-
 
     def conta_colisao(self, mol1_2):
         mol1, mol2 = mol1_2
@@ -220,8 +220,8 @@ def main():
 
     frames = []
     T = 0
-    T_max = 1
-
+    T_max = 10
+    fonte = pygame.font.Font(None, 36)  # None indica a fonte padrão do sistema
     while True:
         frame_data = pygame.surfarray.array3d(window)
         frame_data = frame_data.swapaxes(0, 1)
@@ -255,6 +255,7 @@ def main():
             start = time.time()
             if v_hist:
                 hist(meu_sistema.velocidades)
+                pass
             end = time.time()
             histograma.append(start - end)
 
@@ -267,17 +268,31 @@ def main():
             meu_sistema.simulacao_molecula(desenha)
             end = time.time()
             cada_mol.append(start - end)
+            
+            # temp = np.around((1/NUMERO_MOLECULAS)*(np.sum(meu_sistema.massas*(np.array(meu_sistema.velocidades))**2)/(2*1.380649e-23)), decimals = 2)
+
+            # texto = fonte.render(
+            #     f"Temp: {temp}",
+            #     True,
+            #     (0, 0, 0),
+            # )
+
+            # posicao_texto = texto.get_rect()
+            # posicao_texto.centerx = WINDOW_WIDTH 
+            # posicao_texto.centery = WINDOW_HEIGHT // 10
+
+            # window.blit(texto, posicao_texto)
 
             pygame.display.flip()
             clock.tick(fps)
-            print(T)
+
         if T >= T_max:
             print(f"colisão demora:{sum(colisão)/len(colisão)}")
             print(f"hist demora:{sum(histograma)/len(histograma)}")
             print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
 
             output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
-            imageio.mimsave(output_video_path, frames, fps=int(1 / DT))
+            imageio.mimsave(output_video_path, list(frames), fps=int(1 / DT))
             pygame.quit()
             break
 

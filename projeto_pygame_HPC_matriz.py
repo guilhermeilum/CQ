@@ -63,85 +63,62 @@ def draw(window, cores, coordenadas, raios):
 def colisao_parede(coordenadas, raios, velocidades, DT):
     coordenadas_novas = move(coordenadas, velocidades, DT)
 
-    afasta_0_x = coordenadas_novas[:, 0] > coordenadas[:, 0]
-    afasta_0_y = coordenadas_novas[:, 1] > coordenadas[:, 1]
+    vel_nova = np.copy(velocidades)
+    
+    colide_x_f = coordenadas[:, 0] > raios - WINDOW_WIDTH
+    colide_y_f = coordenadas[:, 1] > raios - WINDOW_HEIGHT
+    
+    colide_x_0 = coordenadas[:, 0] < raios
+    colide_y_0 = coordenadas[:, 1] < raios
+    
+    
 
-    afasta_f_x = coordenadas_novas[:, 0] < coordenadas[:, 0]
-    afasta_f_y = coordenadas_novas[:, 1] < coordenadas[:, 1]
-
-    coordenadas_mais_raio = coordenadas + raios[:, np.newaxis]
-    coordenadas_menos_raio = coordenadas - raios[:, np.newaxis]
-
+    
     velocidades_novas = np.zeros(velocidades.shape)
-
-    velocidades_novas[:, 0] = np.where(
-        np.logical_and(coordenadas_menos_raio[:, 0] <= 0, np.logical_not(afasta_0_x)),
-        -velocidades[:, 0],
-        velocidades[:, 0],
-    )
-    velocidades_novas[:, 0] = np.where(
-        np.logical_and(
-            coordenadas_mais_raio[:, 0] >= WINDOW_WIDTH, np.logical_not(afasta_f_x)
-        ),
-        -velocidades[:, 0],
-        velocidades[:, 0],
-    )
-    velocidades_novas[:, 1] = np.where(
-        np.logical_and(coordenadas_menos_raio[:, 1] <= 0, np.logical_not(afasta_0_y)),
-        -velocidades[:, 1],
-        velocidades[:, 1],
-    )
-    velocidades_novas[:, 1] = np.where(
-        np.logical_and(
-            coordenadas_mais_raio[:, 1] >= WINDOW_HEIGHT, np.logical_not(afasta_f_y)
-        ),
-        -velocidades[:, 1],
-        velocidades[:, 1],
-    )
 
     return velocidades_novas
 
 
-def colisoes_mol(coordenadas, velocidades, DT):
-    for mol in coordenadas:
-        distancia = 
-        if distancia <= (mol1.radius + mol2.radius):
-            distancia_futura = math.sqrt(
-                ((mol1.x + mol1.speed_x * DT) - (mol2.x + mol2.speed_x * DT)) ** 2
-                + ((mol1.y + mol1.speed_y * DT) - (mol2.y + mol2.speed_y * DT)) ** 2
-            )
-            aproximando = distancia_futura < distancia
-            if aproximando:
-                delta_r = (mol1.x - mol2.x, mol1.y - mol2.y)
+# def colisoes_mol(coordenadas, velocidades, DT):
+#     for mol in coordenadas:
+#         distancia =
+#         if distancia <= (mol1.radius + mol2.radius):
+#             distancia_futura = math.sqrt(
+#                 ((mol1.x + mol1.speed_x * DT) - (mol2.x + mol2.speed_x * DT)) ** 2
+#                 + ((mol1.y + mol1.speed_y * DT) - (mol2.y + mol2.speed_y * DT)) ** 2
+#             )
+#             aproximando = distancia_futura < distancia
+#             if aproximando:
+#                 delta_r = (mol1.x - mol2.x, mol1.y - mol2.y)
 
-                delta_v = (mol1.speed_x - mol2.speed_x, mol1.speed_y - mol2.speed_y)
+#                 delta_v = (mol1.speed_x - mol2.speed_x, mol1.speed_y - mol2.speed_y)
 
-                produto_interno = delta_v[0] * delta_r[0] + delta_v[1] * delta_r[1]
+#                 produto_interno = delta_v[0] * delta_r[0] + delta_v[1] * delta_r[1]
 
-                j = (2 * mol2.massa * mol1.massa * produto_interno) / (
-                    distancia * (mol2.massa + mol1.massa)
-                )
+#                 j = (2 * mol2.massa * mol1.massa * produto_interno) / (
+#                     distancia * (mol2.massa + mol1.massa)
+#                 )
 
-                j_x = (j * delta_r[0]) / distancia
-                j_y = (j * delta_r[1]) / distancia
+#                 j_x = (j * delta_r[0]) / distancia
+#                 j_y = (j * delta_r[1]) / distancia
 
-                vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
+#                 vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
+#                 vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
 
-                velocidades.remove(vel_media1)
-                velocidades.remove(vel_media2)
+#                 velocidades.remove(vel_media1)
+#                 velocidades.remove(vel_media2)
 
-                mol2.speed_x += j_x / mol2.massa
-                mol2.speed_y += j_y / mol2.massa
+#                 mol2.speed_x += j_x / mol2.massa
+#                 mol2.speed_y += j_y / mol2.massa
 
-                mol1.speed_x -= j_x / mol1.massa
-                mol1.speed_y -= j_y / mol1.massa
+#                 mol1.speed_x -= j_x / mol1.massa
+#                 mol1.speed_y -= j_y / mol1.massa
 
-                vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
+#                 vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
+#                 vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
 
-                velocidades.append(vel_media1)
-                velocidades.append(vel_media2)
+#                 velocidades.append(vel_media1)
+#                 velocidades.append(vel_media2)
 
 
 def coordenadas(quantidade, raios):
@@ -228,7 +205,7 @@ def main():
     clock = pygame.time.Clock()
     fps = 100
 
-    frames = []
+    frames = np.array([])
     T = 0
     T_max = 1
 
@@ -263,9 +240,9 @@ def main():
     del matriz_cores1
 
     while True:
-        frame_data = pygame.surfarray.array3d(window)
-        frame_data = frame_data.swapaxes(0, 1)
-        frames.append(frame_data)
+        # frame_data = pygame.surfarray.array3d(window)
+        # frame_data = frame_data.swapaxes(0, 1)
+        # np.append(frames,frame_data)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -316,15 +293,15 @@ def main():
 
             pygame.display.flip()
             clock.tick(fps)
-        if T >= T_max:
-            print(f"colisão demora:{sum(colisão)/len(colisão)}")
-            print(f"hist demora:{sum(histograma)/len(histograma)}")
-            print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
+        # if T >= T_max:
+        #     print(f"colisão demora:{sum(colisão)/len(colisão)}")
+        #     print(f"hist demora:{sum(histograma)/len(histograma)}")
+        #     print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
 
-            output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
-            imageio.mimsave(output_video_path, frames, fps=int(1 / DT))
-            pygame.quit()
-            break
+        #     output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
+        #     imageio.mimsave(output_video_path, frames, fps=int(1 / DT))
+        #     pygame.quit()
+        #     break
 
 
 if __name__ == "__main__":

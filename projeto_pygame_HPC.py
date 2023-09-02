@@ -6,6 +6,11 @@ from itertools import combinations
 import numpy as np
 import imageio
 import time
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+matplotlib.use("agg")
 
 histograma = []
 colisão = []
@@ -21,14 +26,16 @@ pygame.display.set_caption("Particulas")
 
 NUMERO_MOLECULAS = 1000
 
-
-VEL = 500
+VEL = 200
 RAIO = 5
 MASSA = 1
 
-VEL1 = 500
+VEL1 = 200
 RAIO1 = 5
 MASSA1 = 1
+
+T_max = 10
+
 
 vel_maxima = max(VEL, VEL1)
 
@@ -92,9 +99,9 @@ class Particle:
 class sistema:
     def __init__(self, particulas):
         self.particulas = particulas
-        self.velocidades = [
-            math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas
-        ]
+        self.velocidades = np.array(
+            [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas]
+        )
         self.lista_combinacao = list(combinations(particulas, 2))
         self.massas = np.array([p.massa for p in particulas])
 
@@ -131,11 +138,8 @@ class sistema:
                 j_x = (j * delta_r[0]) / distancia
                 j_y = (j * delta_r[1]) / distancia
 
-                vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
-
-                self.velocidades.remove(vel_media1)
-                self.velocidades.remove(vel_media2)
+                vel_media1_antiga = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
+                vel_media2_antiga = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
 
                 mol2.speed_x += j_x / mol2.massa
                 mol2.speed_y += j_y / mol2.massa
@@ -143,11 +147,15 @@ class sistema:
                 mol1.speed_x -= j_x / mol1.massa
                 mol1.speed_y -= j_y / mol1.massa
 
-                vel_media1 = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2 = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
+                vel_media1_nova = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
+                vel_media2_nova = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
 
-                self.velocidades.append(vel_media1)
-                self.velocidades.append(vel_media2)
+                self.velocidades[
+                    self.velocidades == vel_media1_antiga
+                ] = vel_media1_nova
+                self.velocidades[
+                    self.velocidades == vel_media2_antiga
+                ] = vel_media2_nova
 
 
 def hist(lista_vel):
@@ -166,6 +174,36 @@ def hist(lista_vel):
             bar_height,
         )
         pygame.draw.rect(window, barra_cor, bar_rect)
+
+
+def plot(vels, vs, y_dist):
+    # Crie um gráfico com o Matplotlib
+
+    fig, ax = plt.subplots(figsize=(5, 6))
+    ax.hist(
+        vels, density=True, label="Distribuição Verdadeira", bins=30
+    )  # Exemplo de gráfico simples
+    ax.plot(vs, y_dist, c="0", label="Distribuição Maxwell-Boltzmann")
+
+    plt.ylim(0, np.max(y_dist) * 1.2)
+    plt.xlim(0, 500)
+    plt.yticks([])
+
+    plt.xlabel("velocidade")
+    canvas = FigureCanvas(fig)
+    canvas.draw()
+    renderer = canvas.get_renderer()
+    raw_data = renderer.tostring_rgb()
+    size = canvas.get_width_height()
+
+    plt.close()
+
+    return size, raw_data
+
+
+def FMB(v, T, massa):
+    mb = massa * np.exp(-massa * v**2 / (2 * T)) / (2 * np.pi * T) * 2 * np.pi * v
+    return mb
 
 
 def main():
@@ -220,11 +258,23 @@ def main():
 
     frames = []
     T = 0
-    T_max = 10
-    fonte = pygame.font.Font(None, 36)  # None indica a fonte padrão do sistema
+
+    temp = (1 / NUMERO_MOLECULAS) * sum(
+        [
+            meu_sistema.massas[i] * meu_sistema.velocidades[i] ** 2 / 2
+            for i in range(len(meu_sistema.velocidades))
+        ]
+    )
+
+    vs = np.linspace(0, vel_maxima * 5, NUMERO_MOLECULAS)
+
+    y_dist = FMB(vs, temp, MASSA)
+
     while True:
         frame_data = pygame.surfarray.array3d(window)
         frame_data = frame_data.swapaxes(0, 1)
+        frames.append(frame_data)
+        # Append the frame_data to the file
         frames.append(frame_data)
 
         for event in pygame.event.get():
@@ -254,8 +304,13 @@ def main():
             window.fill(WHITE)
             start = time.time()
             if v_hist:
-                hist(meu_sistema.velocidades)
-                pass
+                # hist(meu_sistema.velocidades)
+                size, raw_data = plot(meu_sistema.velocidades, vs, y_dist)
+
+                # Crie uma imagem a partir dos dados renderizados e desenhe-a na tela do Pygame
+                image = pygame.image.fromstring(raw_data, size, "RGB")
+                window.blit(image, (x_grafico + 100, 0))
+
             end = time.time()
             histograma.append(start - end)
 
@@ -268,23 +323,10 @@ def main():
             meu_sistema.simulacao_molecula(desenha)
             end = time.time()
             cada_mol.append(start - end)
-            
-            # temp = np.around((1/NUMERO_MOLECULAS)*(np.sum(meu_sistema.massas*(np.array(meu_sistema.velocidades))**2)/(2*1.380649e-23)), decimals = 2)
-
-            # texto = fonte.render(
-            #     f"Temp: {temp}",
-            #     True,
-            #     (0, 0, 0),
-            # )
-
-            # posicao_texto = texto.get_rect()
-            # posicao_texto.centerx = WINDOW_WIDTH 
-            # posicao_texto.centery = WINDOW_HEIGHT // 10
-
-            # window.blit(texto, posicao_texto)
 
             pygame.display.flip()
             clock.tick(fps)
+            # print(T)
 
         if T >= T_max:
             print(f"colisão demora:{sum(colisão)/len(colisão)}")
@@ -292,7 +334,7 @@ def main():
             print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
 
             output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
-            imageio.mimsave(output_video_path, list(frames), fps=int(1 / DT))
+            imageio.mimsave(output_video_path, list(frames), fps=2 * int(1 / DT))
             pygame.quit()
             break
 

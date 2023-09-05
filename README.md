@@ -4,7 +4,7 @@
 <h2 align="left"> Contextualização </h2>
 <blockquote> 
 <p align="justify"> Bom dia, boa tarde ou boa noite! :space_invader: </p>
-<p align="justify"> Nós chamamos Guilherme Gurian Dariani e <a href="https://linktr.ee/gustavovercosa">Gustavo Duarte Verçosa</a> e somos graduandos em Ciência e Tecnologia na <a href="https://ilum.cnpem.br/">Ilum Escola de Ciência</a>, faculdade do <a href="https://cnpem.br/">Centro Nacional de Pesquisa em Energia e Materiais (CNPEM)</a>. Dentro da desafiadora grade curricular, temos matérias de Ciência da Matéria em todos os semestres. Esse repositório então foi feito como parte da disciplina <strong>Cinética Química</strong> e será constantemente atualizado até que o quarto semestre acabe.</p>
+<p align="justify"> Chamamo-nos Guilherme Gurian Dariani e <a href="https://linktr.ee/gustavovercosa">Gustavo Duarte Verçosa</a> e somos graduandos em Ciência e Tecnologia na <a href="https://ilum.cnpem.br/">Ilum Escola de Ciência</a>, faculdade do <a href="https://cnpem.br/">Centro Nacional de Pesquisa em Energia e Materiais (CNPEM)</a>. Dentro da desafiadora grade curricular, temos matérias de Ciência da Matéria em todos os semestres. Esse repositório então foi feito como parte da disciplina <strong>Cinética Química</strong> e será constantemente atualizado até que o quarto semestre acabe.</p>
 <img src="https://img.shields.io/badge/STATUS-Em%20desenvolvimento-576CFB"> <img src="https://img.shields.io/badge/LICENCE-GNU%20General%20Public%20License%20v3.0-75CA75">
 </blockquote> 
 

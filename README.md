@@ -4,7 +4,7 @@
 <h2 align="left"> Context </h2>
 <blockquote> 
 <p align="justify"> Good morning, good afternoon, or good evening! :space_invader: </p>
-<p align="justify"> We are Guilherme Gurian Dariani and <a href="https://linktr.ee/gustavovercosa">Gustavo Duarte Verçosa</a>, undergraduate students in Science and Technology at <a href="https://ilum.cnpem.br/">Ilum School of Science</a>, a college of the <a href="https://cnpem.br/">Brazilian Center for Research in Energy and Materials (CNPEM)</a>. Within the challenging curriculum, we have subjects related to Material Science every semester. This repository was created as part of the <strong>Chemical Kinetics</strong> course and will be constantly updated until the fourth semester concludes.</p>
+<p align="justify"> We are <a href="https://linktr.ee/guidariani">Guilherme Gurian Dariani and <a href="https://linktr.ee/gustavovercosa">Gustavo Duarte Verçosa</a>, undergraduate students in Science and Technology at <a href="https://ilum.cnpem.br/">Ilum School of Science</a>, a college of the <a href="https://cnpem.br/">Brazilian Center for Research in Energy and Materials (CNPEM)</a>. Within the challenging curriculum, we have subjects related to Material Science every semester. This repository was created as part of the <strong>Chemical Kinetics</strong> course and will be constantly updated until the fourth semester concludes.</p>
 <img src="https://img.shields.io/badge/STATUS-In%20progress-576CFB"> <img src="https://img.shields.io/badge/LICENCE-GNU%20General%20Public%20License%20v3.0-75CA75">
 </blockquote> 
 

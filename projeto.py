@@ -4,11 +4,19 @@ import random
 import math
 from itertools import combinations
 import numpy as np
-import imageio
+
 import time
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import shutil
+import os
+
+shutil.rmtree("fps", ignore_errors=True)
+os.mkdir("fps")
+shutil.rmtree("log", ignore_errors=True)
+os.mkdir("log")
+
 
 matplotlib.use("agg")
 
@@ -26,7 +34,7 @@ pygame.display.set_caption("Particulas")
 
 NUMERO_MOLECULAS = 1000
 
-VEL = 100
+VEL = 20
 RAIO = 5
 MASSA = 1
 
@@ -35,9 +43,9 @@ RAIO1 = 5
 MASSA1 = 1
 
 
-T_max = 10
+T_max = 2
 
-chance = 0.5
+chance = 0
 
 # vel_maxima = max(VEL, VEL1)
 vel_maxima = VEL
@@ -54,9 +62,6 @@ METADE = NUMERO_MOLECULAS // 2
 
 cordenadas_possiveis = [(1.0, 1.0) for _ in range(NUMERO_MOLECULAS)]
 
-# cordenadas_possiveis1 = cordenadas_possiveis[:METADE]
-# cordenadas_possiveis2 = cordenadas_possiveis[METADE:]
-
 
 WHITE = (255, 255, 255)
 
@@ -65,7 +70,7 @@ class Particle:
     def __init__(self, x, y, vel, raio, mass, color):
         self.x = x
         self.y = y
-        self.radius = raio
+        self.raio = raio
         self.speed_x = random.uniform(-vel, vel)
         self.speed_y = random.uniform(-vel, vel)
         self.color = color
@@ -77,7 +82,7 @@ class Particle:
         self.y += self.speed_y * DT
 
     def draw(self):
-        pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
+        pygame.draw.circle(window, self.color, (self.x, self.y), self.raio)
 
     def colisao_parede(self):
         x_novo = self.x + self.speed_x * DT
@@ -89,13 +94,13 @@ class Particle:
         afasta_f_x = x_novo < self.x
         afasta_f_y = y_novo < self.y
 
-        if ((self.x - self.radius) <= 0 and not afasta_0_x) or (
-            (self.x + self.radius) >= WINDOW_WIDTH and not afasta_f_x
+        if ((self.x - self.raio) <= 0 and not afasta_0_x) or (
+            (self.x + self.raio) >= WINDOW_WIDTH and not afasta_f_x
         ):
             self.speed_x *= -1
 
-        if ((self.y - self.radius) <= 0 and not afasta_0_y) or (
-            (self.y + self.radius) >= WINDOW_HEIGHT and not afasta_f_y
+        if ((self.y - self.raio) <= 0 and not afasta_0_y) or (
+            (self.y + self.raio) >= WINDOW_HEIGHT and not afasta_f_y
         ):
             self.speed_y *= -1
 
@@ -104,8 +109,8 @@ class sistema:
     def __init__(self, particulas):
         self.quantidade_vermelho = len(particulas)
         self.quantidade_azul = 0
-        self.quantidade_vermelho_lista = [len(particulas)]
-        self.quantidade_azul_lista = [0]
+        self.quantidade_vermelho_lista = []
+        self.quantidade_azul_lista = []
         self.particulas = particulas
         self.velocidades = np.array(
             [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas]
@@ -121,13 +126,12 @@ class sistema:
 
     def colisoes_mol(self):
         combinacao = list(combinations(range(len(self.particulas)), 2))
-        lista_nova = self.particulas.copy()
         for index1, index2 in combinacao:
             mol1 = self.particulas[index1]
             mol2 = self.particulas[index2]
             if mol1.existe and mol2.existe:
                 distancia = math.sqrt((mol1.x - mol2.x) ** 2 + (mol1.y - mol2.y) ** 2)
-                if distancia <= (mol1.radius + mol2.radius):
+                if distancia <= (mol1.raio + mol2.raio):
                     chance_ = random.random()
                     distancia_futura = math.sqrt(
                         ((mol1.x + mol1.speed_x * DT) - (mol2.x + mol2.speed_x * DT))
@@ -161,12 +165,11 @@ class sistema:
                         vel_media2_antiga = math.sqrt(
                             mol2.speed_x**2 + mol2.speed_y**2
                         )
+                        mol1.speed_x -= j_x / mol1.massa
+                        mol1.speed_y -= j_y / mol1.massa
 
                         mol2.speed_x += j_x / mol2.massa
                         mol2.speed_y += j_y / mol2.massa
-
-                        mol1.speed_x -= j_x / mol1.massa
-                        mol1.speed_y -= j_y / mol1.massa
 
                         vel_media1_nova = math.sqrt(
                             mol1.speed_x**2 + mol1.speed_y**2
@@ -174,13 +177,11 @@ class sistema:
                         vel_media2_nova = math.sqrt(
                             mol2.speed_x**2 + mol2.speed_y**2
                         )
+                        indices1 = np.where(self.velocidades == vel_media1_antiga)
+                        indices2 = np.where(self.velocidades == vel_media2_antiga)
+                        self.velocidades[indices1[0]] = vel_media1_nova
 
-                        self.velocidades[
-                            self.velocidades == vel_media1_antiga
-                        ] = vel_media1_nova
-                        self.velocidades[
-                            self.velocidades == vel_media2_antiga
-                        ] = vel_media2_nova
+                        self.velocidades[indices2[0]] = vel_media2_nova
 
                         if (
                             chance_ > chance
@@ -189,30 +190,30 @@ class sistema:
                         ):
                             self.quantidade_vermelho -= 2
                             self.quantidade_azul += 1
-                            lista_nova.remove(mol1)
+                            mol1.existe = False
                             mol2.color = (0, 0, 255)
+                            mol2.raio += 2
+                            mol1.raio = 0
+                            np.delete(self.velocidades, indices1[0])
 
-        self.particulas = lista_nova
+                            mol2.speed_x = (
+                                mol2.speed_x * mol2.massa + mol1.speed_x * mol1.massa
+                            ) / (mol1.massa + mol2.massa)
+
+                            mol2.speed_y = (
+                                mol2.speed_y * mol2.massa + mol1.speed_y * mol1.massa
+                            ) / (mol1.massa + mol2.massa)
+
+                            vel_media2_nova = math.sqrt(
+                                mol2.speed_x**2 + mol2.speed_y**2
+                            )
+                            self.velocidades[indices2[0]] = vel_media2_nova
+
+                            mol2.massa += mol1.massa
+
+        self.particulas = [mol for mol in self.particulas if mol.existe]
         self.quantidade_azul_lista.append(self.quantidade_azul)
         self.quantidade_vermelho_lista.append(self.quantidade_vermelho)
-
-
-def hist(lista_vel):
-    bins = 200
-    hist, _ = np.histogram(lista_vel, bins=bins, range=(0, 1400))
-    bin_width = x_grafico / bins
-
-    # Desenhar o histograma
-    for i, count in enumerate(hist):
-        bar_height = int((count / 20) * WINDOW_HEIGHT)
-
-        bar_rect = pygame.Rect(
-            WINDOW_WIDTH + (i * bin_width),
-            WINDOW_HEIGHT - bar_height,
-            bin_width,
-            bar_height,
-        )
-        pygame.draw.rect(window, barra_cor, bar_rect)
 
 
 def plot_dist_vel(axs, vels, vs, y_dist):
@@ -223,7 +224,7 @@ def plot_dist_vel(axs, vels, vs, y_dist):
     axs[0, 0].plot(vs, y_dist, c="0", label="Distribuição Maxwell-Boltzmann")
 
     axs[0, 0].set_ylim(0, np.max(y_dist) * 1.2)
-    axs[0, 0].set_xlim(0, 500)
+    axs[0, 0].set_xlim(0, 100)
     axs[0, 0].set_yticks([])
 
     axs[0, 0].set_xlabel("Velocidade")
@@ -322,7 +323,7 @@ def main():
                     D = ((x - particulas[j].x) ** 2 + (y - particulas[j].y) ** 2) ** (
                         1 / 2
                     )
-                    if D <= (particulas[i].radius + particulas[j].radius):
+                    if D <= (particulas[i].raio + particulas[j].raio):
                         colidem = True
             if not colidem:
                 break
@@ -335,7 +336,7 @@ def main():
     fps = 100
 
     frames = []
-    T = 0
+    T = 0.0
     tempo = []
     list_deri_verm = []
     list_deri_azul = []
@@ -355,7 +356,7 @@ def main():
     while True:
         frame_data = pygame.surfarray.array3d(window)
         frame_data = frame_data.swapaxes(0, 1)
-        frames.append(frame_data)
+        np.save(rf"fps/fps_{T}.npy", frame_data)
         # Append the frame_data to the file
 
         for event in pygame.event.get():
@@ -383,6 +384,17 @@ def main():
         if not pausa:
             tempo.append(T)
             window.fill(WHITE)
+
+            start = time.time()
+            meu_sistema.colisoes_mol()
+            end = time.time()
+            colisão.append(start - end)
+
+            start = time.time()
+            meu_sistema.simulacao_molecula(desenha)
+            end = time.time()
+            cada_mol.append(start - end)
+
             start = time.time()
             if v_hist:
                 # hist(meu_sistema.velocidades)
@@ -411,29 +423,25 @@ def main():
 
             end = time.time()
             histograma.append(start - end)
-
-            start = time.time()
-            meu_sistema.colisoes_mol()
-            end = time.time()
-            colisão.append(start - end)
-
-            start = time.time()
-            meu_sistema.simulacao_molecula(desenha)
-            end = time.time()
-            cada_mol.append(start - end)
-
             pygame.display.flip()
             clock.tick(fps)
             # print(T)
             T += DT
+            np.save(r"fps\tempo.npy", np.array(tempo + [DT]))
+            np.save(r"log\tempo.npy", np.array(tempo))
+            np.save(
+                r"log\quantidade_vermelho.npy",
+                np.array(meu_sistema.quantidade_vermelho_lista),
+            )
+            np.save(
+                r"log\quantidade_azul.npy", np.array(meu_sistema.quantidade_azul_lista)
+            )
         if T >= T_max:
             print(f"colisão demora:{sum(colisão)/len(colisão)}")
             print(f"hist demora:{sum(histograma)/len(histograma)}")
             print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
-
-            output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
-            imageio.mimsave(output_video_path, list(frames), fps=int(1 / DT))
             pygame.quit()
+
             break
 
 

@@ -26,18 +26,21 @@ pygame.display.set_caption("Particulas")
 
 NUMERO_MOLECULAS = 1000
 
-VEL = 200
+VEL = 100
 RAIO = 5
 MASSA = 1
 
-VEL1 = 200
+VEL1 = 50
 RAIO1 = 5
 MASSA1 = 1
 
+
 T_max = 10
 
+chance = 0.5
 
-vel_maxima = max(VEL, VEL1)
+# vel_maxima = max(VEL, VEL1)
+vel_maxima = VEL
 
 DT = 1 / (vel_maxima)
 
@@ -51,8 +54,8 @@ METADE = NUMERO_MOLECULAS // 2
 
 cordenadas_possiveis = [(1.0, 1.0) for _ in range(NUMERO_MOLECULAS)]
 
-cordenadas_possiveis1 = cordenadas_possiveis[:METADE]
-cordenadas_possiveis2 = cordenadas_possiveis[METADE:]
+# cordenadas_possiveis1 = cordenadas_possiveis[:METADE]
+# cordenadas_possiveis2 = cordenadas_possiveis[METADE:]
 
 
 WHITE = (255, 255, 255)
@@ -67,6 +70,7 @@ class Particle:
         self.speed_y = random.uniform(-vel, vel)
         self.color = color
         self.massa = mass
+        self.existe = True
 
     def move(self):
         self.x += self.speed_x * DT
@@ -98,11 +102,14 @@ class Particle:
 
 class sistema:
     def __init__(self, particulas):
+        self.quantidade_vermelho = len(particulas)
+        self.quantidade_azul = 0
+        self.quantidade_vermelho_lista = [len(particulas)]
+        self.quantidade_azul_lista = [0]
         self.particulas = particulas
         self.velocidades = np.array(
             [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas]
         )
-        self.lista_combinacao = list(combinations(particulas, 2))
         self.massas = np.array([p.massa for p in particulas])
 
     def simulacao_molecula(self, desenha):
@@ -113,49 +120,81 @@ class sistema:
                 particle.draw()
 
     def colisoes_mol(self):
-        list(map(self.conta_colisao, self.lista_combinacao))
+        combinacao = list(combinations(range(len(self.particulas)), 2))
+        lista_nova = self.particulas.copy()
+        for index1, index2 in combinacao:
+            mol1 = self.particulas[index1]
+            mol2 = self.particulas[index2]
+            if mol1.existe and mol2.existe:
+                distancia = math.sqrt((mol1.x - mol2.x) ** 2 + (mol1.y - mol2.y) ** 2)
+                if distancia <= (mol1.radius + mol2.radius):
+                    chance_ = random.random()
+                    distancia_futura = math.sqrt(
+                        ((mol1.x + mol1.speed_x * DT) - (mol2.x + mol2.speed_x * DT))
+                        ** 2
+                        + ((mol1.y + mol1.speed_y * DT) - (mol2.y + mol2.speed_y * DT))
+                        ** 2
+                    )
+                    aproximando = distancia_futura < distancia
+                    if aproximando:
+                        delta_r = (mol1.x - mol2.x, mol1.y - mol2.y)
 
-    def conta_colisao(self, mol1_2):
-        mol1, mol2 = mol1_2
-        distancia = math.sqrt((mol1.x - mol2.x) ** 2 + (mol1.y - mol2.y) ** 2)
-        if distancia <= (mol1.radius + mol2.radius):
-            distancia_futura = math.sqrt(
-                ((mol1.x + mol1.speed_x * DT) - (mol2.x + mol2.speed_x * DT)) ** 2
-                + ((mol1.y + mol1.speed_y * DT) - (mol2.y + mol2.speed_y * DT)) ** 2
-            )
-            aproximando = distancia_futura < distancia
-            if aproximando:
-                delta_r = (mol1.x - mol2.x, mol1.y - mol2.y)
+                        delta_v = (
+                            mol1.speed_x - mol2.speed_x,
+                            mol1.speed_y - mol2.speed_y,
+                        )
 
-                delta_v = (mol1.speed_x - mol2.speed_x, mol1.speed_y - mol2.speed_y)
+                        produto_interno = (
+                            delta_v[0] * delta_r[0] + delta_v[1] * delta_r[1]
+                        )
 
-                produto_interno = delta_v[0] * delta_r[0] + delta_v[1] * delta_r[1]
+                        j = (2 * mol2.massa * mol1.massa * produto_interno) / (
+                            distancia * (mol2.massa + mol1.massa)
+                        )
 
-                j = (2 * mol2.massa * mol1.massa * produto_interno) / (
-                    distancia * (mol2.massa + mol1.massa)
-                )
+                        j_x = (j * delta_r[0]) / distancia
+                        j_y = (j * delta_r[1]) / distancia
 
-                j_x = (j * delta_r[0]) / distancia
-                j_y = (j * delta_r[1]) / distancia
+                        vel_media1_antiga = math.sqrt(
+                            mol1.speed_x**2 + mol1.speed_y**2
+                        )
+                        vel_media2_antiga = math.sqrt(
+                            mol2.speed_x**2 + mol2.speed_y**2
+                        )
 
-                vel_media1_antiga = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2_antiga = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
+                        mol2.speed_x += j_x / mol2.massa
+                        mol2.speed_y += j_y / mol2.massa
 
-                mol2.speed_x += j_x / mol2.massa
-                mol2.speed_y += j_y / mol2.massa
+                        mol1.speed_x -= j_x / mol1.massa
+                        mol1.speed_y -= j_y / mol1.massa
 
-                mol1.speed_x -= j_x / mol1.massa
-                mol1.speed_y -= j_y / mol1.massa
+                        vel_media1_nova = math.sqrt(
+                            mol1.speed_x**2 + mol1.speed_y**2
+                        )
+                        vel_media2_nova = math.sqrt(
+                            mol2.speed_x**2 + mol2.speed_y**2
+                        )
 
-                vel_media1_nova = math.sqrt(mol1.speed_x**2 + mol1.speed_y**2)
-                vel_media2_nova = math.sqrt(mol2.speed_x**2 + mol2.speed_y**2)
+                        self.velocidades[
+                            self.velocidades == vel_media1_antiga
+                        ] = vel_media1_nova
+                        self.velocidades[
+                            self.velocidades == vel_media2_antiga
+                        ] = vel_media2_nova
 
-                self.velocidades[
-                    self.velocidades == vel_media1_antiga
-                ] = vel_media1_nova
-                self.velocidades[
-                    self.velocidades == vel_media2_antiga
-                ] = vel_media2_nova
+                        if (
+                            chance_ > chance
+                            and mol1.color == (255, 0, 0)
+                            and mol2.color == (255, 0, 0)
+                        ):
+                            self.quantidade_vermelho -= 2
+                            self.quantidade_azul += 1
+                            lista_nova.remove(mol1)
+                            mol2.color = (0, 0, 255)
+
+        self.particulas = lista_nova
+        self.quantidade_azul_lista.append(self.quantidade_azul)
+        self.quantidade_vermelho_lista.append(self.quantidade_vermelho)
 
 
 def hist(lista_vel):
@@ -176,29 +215,68 @@ def hist(lista_vel):
         pygame.draw.rect(window, barra_cor, bar_rect)
 
 
-def plot(vels, vs, y_dist):
-    # Crie um gráfico com o Matplotlib
-
-    fig, ax = plt.subplots(figsize=(5, 6))
-    ax.hist(
+def plot_dist_vel(axs, vels, vs, y_dist):
+    # Crie um gráfico com o Matplotli
+    axs[0, 0].hist(
         vels, density=True, label="Distribuição Verdadeira", bins=30
     )  # Exemplo de gráfico simples
-    ax.plot(vs, y_dist, c="0", label="Distribuição Maxwell-Boltzmann")
+    axs[0, 0].plot(vs, y_dist, c="0", label="Distribuição Maxwell-Boltzmann")
 
-    plt.ylim(0, np.max(y_dist) * 1.2)
-    plt.xlim(0, 500)
-    plt.yticks([])
+    axs[0, 0].set_ylim(0, np.max(y_dist) * 1.2)
+    axs[0, 0].set_xlim(0, 500)
+    axs[0, 0].set_yticks([])
 
-    plt.xlabel("velocidade")
+    axs[0, 0].set_xlabel("Velocidade")
+
+
+def plot_quantidade(axs, tempo, q_verm, q_azul):
+    # Crie um gráfico com o Matplotlib
+    axs[0, 1].plot(tempo, q_verm, "r")
+    axs[0, 1].plot(tempo, q_azul, "b")
+    axs[0, 1].set_xlabel("Tempo")
+    axs[0, 1].set_ylabel("Quant.")
+
+
+def plot_derivada(
+    axs,
+    tempo,
+    q_verm,
+    q_azul,
+    list_deri_verm,
+    list_deri_azul,
+):
+    if len(tempo) > 1:
+        derivada_verm = (q_verm[-1] - q_verm[-2]) / tempo[-1]
+        derivada_azul = (q_azul[-1] - q_azul[-2]) / tempo[-1]
+
+        list_deri_verm.append(derivada_verm)
+        list_deri_azul.append(derivada_azul)
+
+        axs[1, 1].plot(tempo[1:], list_deri_verm, "r")
+        axs[1, 1].plot(tempo[1:], list_deri_azul, "b")
+        axs[1, 1].set_xlabel("Tempo")
+        axs[1, 1].set_ylabel("$d$ Quant./$dt$")
+
+
+def cria_figura():
+    fig, axs = plt.subplots(2, 2, figsize=(5, 6))
+    return fig, axs
+
+
+def extrai_dados(fig, axs):
+    plt.tight_layout()
     canvas = FigureCanvas(fig)
     canvas.draw()
     renderer = canvas.get_renderer()
     raw_data = renderer.tostring_rgb()
     size = canvas.get_width_height()
 
-    plt.close()
-
-    return size, raw_data
+    axs[0, 0].clear()
+    axs[0, 1].clear()
+    axs[1, 0].clear()
+    axs[1, 1].clear()
+    imagem = pygame.image.fromstring(raw_data, size, "RGB")
+    return imagem
 
 
 def FMB(v, T, massa):
@@ -220,19 +298,19 @@ def main():
             MASSA,
             (255, 0, 0),
         )
-        for x, y in cordenadas_possiveis1
+        for x, y in cordenadas_possiveis
     ]
-    for x, y in cordenadas_possiveis2:
-        particulas.append(
-            Particle(
-                x,
-                y,
-                VEL1,
-                RAIO1,
-                MASSA1,
-                (0, 0, 255),
-            )
-        )
+    # for x, y in cordenadas_possiveis2:
+    #     particulas.append(
+    #         Particle(
+    #             x,
+    #             y,
+    #             VEL1,
+    #             RAIO1,
+    #             MASSA1,
+    #             (0, 0, 255),
+    #         )
+    #     )
     for i in range(len(particulas)):
         while True:
             colidem = False
@@ -258,6 +336,9 @@ def main():
 
     frames = []
     T = 0
+    tempo = []
+    list_deri_verm = []
+    list_deri_azul = []
 
     temp = (1 / NUMERO_MOLECULAS) * sum(
         [
@@ -269,13 +350,13 @@ def main():
     vs = np.linspace(0, vel_maxima * 5, NUMERO_MOLECULAS)
 
     y_dist = FMB(vs, temp, MASSA)
+    fig, axs = cria_figura()
 
     while True:
         frame_data = pygame.surfarray.array3d(window)
         frame_data = frame_data.swapaxes(0, 1)
         frames.append(frame_data)
         # Append the frame_data to the file
-        frames.append(frame_data)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -300,16 +381,33 @@ def main():
                     desenha = not desenha
 
         if not pausa:
-            T += DT
+            tempo.append(T)
             window.fill(WHITE)
             start = time.time()
             if v_hist:
                 # hist(meu_sistema.velocidades)
-                size, raw_data = plot(meu_sistema.velocidades, vs, y_dist)
+
+                plot_dist_vel(axs, meu_sistema.velocidades, vs, y_dist)
 
                 # Crie uma imagem a partir dos dados renderizados e desenhe-a na tela do Pygame
-                image = pygame.image.fromstring(raw_data, size, "RGB")
-                window.blit(image, (x_grafico + 100, 0))
+
+                plot_quantidade(
+                    axs,
+                    tempo,
+                    meu_sistema.quantidade_vermelho_lista,
+                    meu_sistema.quantidade_azul_lista,
+                )
+                plot_derivada(
+                    axs,
+                    tempo,
+                    meu_sistema.quantidade_vermelho_lista,
+                    meu_sistema.quantidade_azul_lista,
+                    list_deri_verm,
+                    list_deri_azul,
+                )
+
+                image_hist = extrai_dados(fig, axs)
+                window.blit(image_hist, (x_grafico + 100, 0))
 
             end = time.time()
             histograma.append(start - end)
@@ -327,14 +425,14 @@ def main():
             pygame.display.flip()
             clock.tick(fps)
             # print(T)
-
+            T += DT
         if T >= T_max:
             print(f"colisão demora:{sum(colisão)/len(colisão)}")
             print(f"hist demora:{sum(histograma)/len(histograma)}")
             print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
 
             output_video_path = f"simulation_{DT}_{vel_maxima}.mp4"
-            imageio.mimsave(output_video_path, list(frames), fps=2 * int(1 / DT))
+            imageio.mimsave(output_video_path, list(frames), fps=int(1 / DT))
             pygame.quit()
             break
 

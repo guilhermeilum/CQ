@@ -4,7 +4,6 @@ import random
 import math
 from itertools import combinations
 import numpy as np
-
 import time
 import matplotlib.pyplot as plt
 import matplotlib
@@ -16,7 +15,6 @@ shutil.rmtree("fps", ignore_errors=True)
 os.mkdir("fps")
 shutil.rmtree("log", ignore_errors=True)
 os.mkdir("log")
-
 
 matplotlib.use("agg")
 
@@ -50,6 +48,7 @@ chance = 0.5
 # vel_maxima = max(VEL, VEL1)
 vel_maxima = VEL
 
+
 DT = 1 / (vel_maxima)
 
 
@@ -63,6 +62,7 @@ METADE = NUMERO_MOLECULAS // 2
 cordenadas_possiveis = [(1.0, 1.0) for _ in range(NUMERO_MOLECULAS)]
 
 
+
 WHITE = (255, 255, 255)
 
 
@@ -70,19 +70,25 @@ class Particle:
     def __init__(self, x, y, vel, raio, mass, color):
         self.x = x
         self.y = y
+
         self.raio = raio
+
         self.speed_x = random.uniform(-vel, vel)
         self.speed_y = random.uniform(-vel, vel)
         self.color = color
         self.massa = mass
+
         self.existe = True
+
 
     def move(self):
         self.x += self.speed_x * DT
         self.y += self.speed_y * DT
 
     def draw(self):
+
         pygame.draw.circle(window, self.color, (self.x, self.y), self.raio)
+
 
     def colisao_parede(self):
         x_novo = self.x + self.speed_x * DT
@@ -93,6 +99,7 @@ class Particle:
 
         afasta_f_x = x_novo < self.x
         afasta_f_y = y_novo < self.y
+
 
         if ((self.x - self.raio) <= 0 and not afasta_0_x) or (
             (self.x + self.raio) >= WINDOW_WIDTH and not afasta_f_x
@@ -115,6 +122,7 @@ class sistema:
         self.velocidades = np.array(
             [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas]
         )
+
         self.massas = np.array([p.massa for p in particulas])
 
     def simulacao_molecula(self, desenha):
@@ -125,6 +133,7 @@ class sistema:
                 particle.draw()
 
     def colisoes_mol(self):
+
         combinacao = list(combinations(range(len(self.particulas)), 2))
         for index1, index2 in combinacao:
             mol1 = self.particulas[index1]
@@ -265,11 +274,13 @@ def cria_figura():
 
 def extrai_dados(fig, axs):
     plt.tight_layout()
+
     canvas = FigureCanvas(fig)
     canvas.draw()
     renderer = canvas.get_renderer()
     raw_data = renderer.tostring_rgb()
     size = canvas.get_width_height()
+
 
     axs[0, 0].clear()
     axs[0, 1].clear()
@@ -298,6 +309,7 @@ def main():
             MASSA,
             (255, 0, 0),
         )
+
         for x, y in cordenadas_possiveis
     ]
     # for x, y in cordenadas_possiveis2:
@@ -311,6 +323,7 @@ def main():
     #             (0, 0, 255),
     #         )
     #     )
+
     for i in range(len(particulas)):
         while True:
             colidem = False
@@ -322,7 +335,9 @@ def main():
                     D = ((x - particulas[j].x) ** 2 + (y - particulas[j].y) ** 2) ** (
                         1 / 2
                     )
+
                     if D <= (particulas[i].raio + particulas[j].raio):
+
                         colidem = True
             if not colidem:
                 break
@@ -335,10 +350,12 @@ def main():
     fps = 100
 
     frames = []
+
     T = 0.0
     tempo = []
     list_deri_verm = []
     list_deri_azul = []
+
 
     temp = (1 / NUMERO_MOLECULAS) * sum(
         [
@@ -350,13 +367,17 @@ def main():
     vs = np.linspace(0, vel_maxima * 5, NUMERO_MOLECULAS)
 
     y_dist = FMB(vs, temp, MASSA)
+
     fig, axs = cria_figura()
+
 
     while True:
         frame_data = pygame.surfarray.array3d(window)
         frame_data = frame_data.swapaxes(0, 1)
+
         np.save(rf"fps/fps_{T}.npy", frame_data)
         # Append the frame_data to the file
+
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -381,8 +402,10 @@ def main():
                     desenha = not desenha
 
         if not pausa:
+
             tempo.append(T)
             window.fill(WHITE)
+
 
             start = time.time()
             meu_sistema.colisoes_mol()
@@ -393,6 +416,7 @@ def main():
             meu_sistema.simulacao_molecula(desenha)
             end = time.time()
             cada_mol.append(start - end)
+
             cria_dados_deriv(
                 tempo,
                 meu_sistema.quantidade_vermelho_lista,
@@ -440,10 +464,12 @@ def main():
             np.save(
                 r"log\quantidade_azul.npy", np.array(meu_sistema.quantidade_azul_lista)
             )
+
         if T >= T_max:
             print(f"colisão demora:{sum(colisão)/len(colisão)}")
             print(f"hist demora:{sum(histograma)/len(histograma)}")
             print(f"mol demora:{sum(cada_mol)/len(cada_mol)}")
+
             pygame.quit()
 
             break

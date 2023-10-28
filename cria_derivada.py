@@ -35,13 +35,14 @@ popt_verm, _ = curve_fit(func_verm, temp_novo, 1 / q_verm_novo)
 
 def plot_quantidade_inv(ax, temp, popt_verm, lista_verm):
     funcao = func_verm(temp, *popt_verm)
-    ax.scatter(temp, 1 / lista_verm, 0.1, c="r")
-    ax.plot(temp, funcao, "r")
+    ax.scatter(temp, 1 / lista_verm, 0.1, c="r", label="Inverso da quantidade")
+    ax.plot(temp, funcao, "r", label="Fit inverso")
     ax.text(
-        min(temp),
-        max(funcao),
+        max(temp) / 10 * 8,
+        max(funcao) / 10 * 2,
         f"k = {round(popt_verm[0],6)}",
     )
+    ax.legend()
     ax.set_xlabel("Tempo")
     ax.set_ylabel("1 / [A]")
 
@@ -52,8 +53,9 @@ def plot_quantidade(
     list_verm,
     list_azul,
 ):
-    ax.scatter(tempo, list_verm, 0.1, c="r")
-    ax.scatter(tempo, list_azul, 0.1, c="b")
+    ax.scatter(tempo, list_verm, 0.1, c="r", label="Quantidade vermelhos")
+    ax.scatter(tempo, list_azul, 0.1, c="b", label="Quantidade azuis")
+    ax.legend()
     ax.set_xlabel("Tempo")
     ax.set_ylabel("Quant.")
 
@@ -64,18 +66,18 @@ def plot_derivada(ax, temp, lista_verm, popt):
         derivada_list.append(
             -((lista_verm[i] - lista_verm[i - 1]) / (temp[i] - temp[i - 1]))
         )
-    ax.scatter(temp[1:], derivada_list, 0.1, c="r")
-    ax.plot(temp[1:], popt[0] * lista_verm[1:] ** 2)
+    ax.plot(temp[1:], derivada_list, label="Derivada númerica")
+    ax.plot(temp[1:], popt[0] * lista_verm[1:] ** 2, label="Derivada $A^2k$")
+    ax.legend()
     ax.set_xlabel("Tempo")
     ax.set_ylabel("$d$ Quant./ $dt$")
 
 
-
-
-fig, axs = plt.subplots(1, 3)
+fig, axs = plt.subplots(3, 1)
 plot_quantidade(axs[0], temp_novo, q_verm_novo, q_azul_novo)
 plot_quantidade_inv(axs[1], temp, popt_verm, q_verm)
 plot_derivada(axs[2], temp_novo, q_verm_novo, popt_verm)
 plt.tight_layout()
+plt.savefig("Fits.png", dpi=600)
 
 plt.show()

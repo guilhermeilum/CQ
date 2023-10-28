@@ -162,6 +162,11 @@ cython_debug/
 teste*
 simulation*
 requere
+
+
+fps
+log
+
 1fig.png
 2fig.png
 3fig.png
@@ -176,3 +181,4 @@ parede3.png
 tudo.png
 
 projeto.ipynb
+

@@ -34,18 +34,18 @@ pygame.display.set_caption("Particulas")
 
 NUMERO_MOLECULAS = 1000
 
-VEL = 20
-RAIO = 5
+VEL = 50
+RAIO = 2
 MASSA = 1
 
 VEL1 = 50
-RAIO1 = 5
+RAIO1 = 1
 MASSA1 = 1
 
 
-T_max = 2
+T_max = 10
 
-chance = 0
+chance = 0.5
 
 # vel_maxima = max(VEL, VEL1)
 vel_maxima = VEL
@@ -241,22 +241,21 @@ def plot_quantidade(axs, tempo, q_verm, q_azul):
 def plot_derivada(
     axs,
     tempo,
-    q_verm,
-    q_azul,
     list_deri_verm,
     list_deri_azul,
 ):
-    if len(tempo) > 1:
-        derivada_verm = (q_verm[-1] - q_verm[-2]) / tempo[-1]
-        derivada_azul = (q_azul[-1] - q_azul[-2]) / tempo[-1]
+    axs[1, 1].plot(tempo[1:], list_deri_verm, "r")
+    axs[1, 1].plot(tempo[1:], list_deri_azul, "b")
+    axs[1, 1].set_xlabel("Tempo")
+    axs[1, 1].set_ylabel("$d$ Quant./$dt$")
 
+
+def cria_dados_deriv(tempo, q_verm, q_azul, list_deri_verm, list_deri_azul):
+    if len(tempo) > 1:
+        derivada_verm = -((q_verm[-1] - q_verm[-2]) / (tempo[-1] - tempo[-2]))
+        derivada_azul = (q_azul[-1] - q_azul[-2]) / (tempo[-1] - tempo[-2])
         list_deri_verm.append(derivada_verm)
         list_deri_azul.append(derivada_azul)
-
-        axs[1, 1].plot(tempo[1:], list_deri_verm, "r")
-        axs[1, 1].plot(tempo[1:], list_deri_azul, "b")
-        axs[1, 1].set_xlabel("Tempo")
-        axs[1, 1].set_ylabel("$d$ Quant./$dt$")
 
 
 def cria_figura():
@@ -394,6 +393,13 @@ def main():
             meu_sistema.simulacao_molecula(desenha)
             end = time.time()
             cada_mol.append(start - end)
+            cria_dados_deriv(
+                tempo,
+                meu_sistema.quantidade_vermelho_lista,
+                meu_sistema.quantidade_azul_lista,
+                list_deri_verm,
+                list_deri_azul,
+            )
 
             start = time.time()
             if v_hist:
@@ -412,8 +418,6 @@ def main():
                 plot_derivada(
                     axs,
                     tempo,
-                    meu_sistema.quantidade_vermelho_lista,
-                    meu_sistema.quantidade_azul_lista,
                     list_deri_verm,
                     list_deri_azul,
                 )

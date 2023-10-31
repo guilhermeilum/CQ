@@ -1,4 +1,4 @@
-![Cinética (1920 x 633 px) (1703 x 633 px)](https://github.com/guilhermeilum/CQ/assets/107042962/8aa4b241-8b2d-4422-be80-38088fd099b8)
+![CINÉTICA QUÍMICA](https://github.com/guilhermeilum/CQ/assets/107042962/3d70802d-911f-4911-b46c-6cbc79203819)
 <h1 align="center"> </h1>
 
 <h2 align="left"> Context </h2>

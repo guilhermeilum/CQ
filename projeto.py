@@ -25,7 +25,7 @@ cada_mol = []
 pygame.init()
 
 WINDOW_WIDTH, WINDOW_HEIGHT = 620, 608
-x_grafico = 500
+x_grafico = 700
 window = pygame.display.set_mode((WINDOW_WIDTH + x_grafico, WINDOW_HEIGHT))
 pygame.display.set_caption("Particulas")
 
@@ -33,7 +33,7 @@ pygame.display.set_caption("Particulas")
 NUMERO_MOLECULAS = 1000
 
 VEL = 50
-RAIO = 2
+RAIO = 4
 MASSA = 1
 
 VEL1 = 50
@@ -43,7 +43,10 @@ MASSA1 = 1
 
 T_max = 10
 
-chance = 0.5
+chance = 0.7
+cataliza = True
+chance_catalize = 0.5
+tempo_catalize = 10
 
 # vel_maxima = max(VEL, VEL1)
 vel_maxima = VEL
@@ -62,7 +65,6 @@ METADE = NUMERO_MOLECULAS // 2
 cordenadas_possiveis = [(1.0, 1.0) for _ in range(NUMERO_MOLECULAS)]
 
 
-
 WHITE = (255, 255, 255)
 
 
@@ -76,23 +78,24 @@ class Particle:
         self.speed_x = random.uniform(-vel, vel)
         self.speed_y = random.uniform(-vel, vel)
         self.color = color
+        self.tipo = 0
         self.massa = mass
+        self.chance = chance
+        self.catalizada = 0
+        self.time_catalizador = 0
 
         self.existe = True
-
 
     def move(self):
         self.x += self.speed_x * DT
         self.y += self.speed_y * DT
 
     def draw(self):
-
         pygame.draw.circle(window, self.color, (self.x, self.y), self.raio)
 
-
     def colisao_parede(self):
-        x_novo = self.x + self.speed_x * DT
-        y_novo = self.y + self.speed_y * DT
+        x_novo = self.x + self.speed_x
+        y_novo = self.y + self.speed_y
 
         afasta_0_x = x_novo > self.x
         afasta_0_y = y_novo > self.y
@@ -100,16 +103,31 @@ class Particle:
         afasta_f_x = x_novo < self.x
         afasta_f_y = y_novo < self.y
 
-
         if ((self.x - self.raio) <= 0 and not afasta_0_x) or (
             (self.x + self.raio) >= WINDOW_WIDTH and not afasta_f_x
         ):
             self.speed_x *= -1
+            if self.tipo == 0 and cataliza:
+                self.color = (0, 255, 0)
+                self.chance = chance_catalize
+                self.time_catalizador = time.time()
+                self.catalizada = 1
 
         if ((self.y - self.raio) <= 0 and not afasta_0_y) or (
             (self.y + self.raio) >= WINDOW_HEIGHT and not afasta_f_y
         ):
             self.speed_y *= -1
+            if self.tipo == 0 and cataliza:
+                self.color = (0, 255, 0)
+                self.chance = chance_catalize
+                self.catalizada = 1
+                self.time_catalizador = time.time()
+
+    def parar_catalização(self):
+        if self.catalizada and (time.time() - self.time_catalizador) > tempo_catalize:
+            self.catalizada = 0
+            self.chance = chance
+            self.color = (255, 0, 0)
 
 
 class sistema:
@@ -119,21 +137,24 @@ class sistema:
         self.quantidade_vermelho_lista = []
         self.quantidade_azul_lista = []
         self.particulas = particulas
-        self.velocidades = np.array(
-            [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in particulas]
+
+    def velocidades(self):
+        return np.array(
+            [math.sqrt(p.speed_x**2 + p.speed_y**2) for p in self.particulas]
         )
 
-        self.massas = np.array([p.massa for p in particulas])
+    def massas(self):
+        return np.array([p.massa for p in self.particulas])
 
     def simulacao_molecula(self, desenha):
         for particle in self.particulas:
             particle.move()
             particle.colisao_parede()
+            particle.parar_catalização()
             if desenha:
                 particle.draw()
 
     def colisoes_mol(self):
-
         combinacao = list(combinations(range(len(self.particulas)), 2))
         for index1, index2 in combinacao:
             mol1 = self.particulas[index1]
@@ -168,42 +189,26 @@ class sistema:
                         j_x = (j * delta_r[0]) / distancia
                         j_y = (j * delta_r[1]) / distancia
 
-                        vel_media1_antiga = math.sqrt(
-                            mol1.speed_x**2 + mol1.speed_y**2
-                        )
-                        vel_media2_antiga = math.sqrt(
-                            mol2.speed_x**2 + mol2.speed_y**2
-                        )
                         mol1.speed_x -= j_x / mol1.massa
                         mol1.speed_y -= j_y / mol1.massa
 
                         mol2.speed_x += j_x / mol2.massa
                         mol2.speed_y += j_y / mol2.massa
 
-                        vel_media1_nova = math.sqrt(
-                            mol1.speed_x**2 + mol1.speed_y**2
-                        )
-                        vel_media2_nova = math.sqrt(
-                            mol2.speed_x**2 + mol2.speed_y**2
-                        )
-                        indices1 = np.where(self.velocidades == vel_media1_antiga)
-                        indices2 = np.where(self.velocidades == vel_media2_antiga)
-                        self.velocidades[indices1[0]] = vel_media1_nova
-
-                        self.velocidades[indices2[0]] = vel_media2_nova
-
+                        chance_juntar = min((mol1.chance, mol2.chance))
                         if (
-                            chance_ > chance
-                            and mol1.color == (255, 0, 0)
-                            and mol2.color == (255, 0, 0)
+                            chance_ > chance_juntar
+                            and mol1.tipo == 0
+                            and mol2.tipo == 0
                         ):
                             self.quantidade_vermelho -= 2
                             self.quantidade_azul += 1
                             mol1.existe = False
                             mol2.color = (0, 0, 255)
+                            mol2.tipo = 1
                             mol2.raio += 2
+                            mol2.catalizada = 0
                             mol1.raio = 0
-                            np.delete(self.velocidades, indices1[0])
 
                             mol2.speed_x = (
                                 mol2.speed_x * mol2.massa + mol1.speed_x * mol1.massa
@@ -212,12 +217,6 @@ class sistema:
                             mol2.speed_y = (
                                 mol2.speed_y * mol2.massa + mol1.speed_y * mol1.massa
                             ) / (mol1.massa + mol2.massa)
-
-                            vel_media2_nova = math.sqrt(
-                                mol2.speed_x**2 + mol2.speed_y**2
-                            )
-                            self.velocidades[indices2[0]] = vel_media2_nova
-
                             mol2.massa += mol1.massa
 
         self.particulas = [mol for mol in self.particulas if mol.existe]
@@ -259,6 +258,12 @@ def plot_derivada(
     axs[1, 1].set_ylabel("$d$ Quant./$dt$")
 
 
+def plot_temp(axs, tempo, lista_tempo):
+    axs[1, 0].plot(tempo, lista_tempo)
+    axs[1, 0].set_xlabel("Tempo")
+    axs[1, 0].set_ylabel("Temperatura")
+
+
 def cria_dados_deriv(tempo, q_verm, q_azul, list_deri_verm, list_deri_azul):
     if len(tempo) > 1:
         derivada_verm = -((q_verm[-1] - q_verm[-2]) / (tempo[-1] - tempo[-2]))
@@ -281,7 +286,6 @@ def extrai_dados(fig, axs):
     raw_data = renderer.tostring_rgb()
     size = canvas.get_width_height()
 
-
     axs[0, 0].clear()
     axs[0, 1].clear()
     axs[1, 0].clear()
@@ -290,8 +294,22 @@ def extrai_dados(fig, axs):
     return imagem
 
 
-def FMB(v, T, massa):
-    mb = massa * np.exp(-massa * v**2 / (2 * T)) / (2 * np.pi * T) * 2 * np.pi * v
+def temperatura(meu_sistema, k):
+    n_mol = len(meu_sistema.particulas)
+    vels = meu_sistema.velocidades()
+    massas = meu_sistema.massas()
+    return ((1 / n_mol) * sum(massas * vels**2 / 2)) / k
+
+
+def FMB(v, T, massa, k):
+    mb = (
+        massa
+        * np.exp(-massa * v**2 / (2 * T * k))
+        / (2 * np.pi * T * k)
+        * 2
+        * np.pi
+        * v
+    )
     return mb
 
 
@@ -309,7 +327,6 @@ def main():
             MASSA,
             (255, 0, 0),
         )
-
         for x, y in cordenadas_possiveis
     ]
     # for x, y in cordenadas_possiveis2:
@@ -337,7 +354,6 @@ def main():
                     )
 
                     if D <= (particulas[i].raio + particulas[j].raio):
-
                         colidem = True
             if not colidem:
                 break
@@ -355,21 +371,12 @@ def main():
     tempo = []
     list_deri_verm = []
     list_deri_azul = []
-
-
-    temp = (1 / NUMERO_MOLECULAS) * sum(
-        [
-            meu_sistema.massas[i] * meu_sistema.velocidades[i] ** 2 / 2
-            for i in range(len(meu_sistema.velocidades))
-        ]
-    )
+    k = 1.38064852e-23
 
     vs = np.linspace(0, vel_maxima * 5, NUMERO_MOLECULAS)
 
-    y_dist = FMB(vs, temp, MASSA)
-
     fig, axs = cria_figura()
-
+    list_temp = []
 
     while True:
         frame_data = pygame.surfarray.array3d(window)
@@ -377,7 +384,6 @@ def main():
 
         np.save(rf"fps/fps_{T}.npy", frame_data)
         # Append the frame_data to the file
-
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -402,10 +408,8 @@ def main():
                     desenha = not desenha
 
         if not pausa:
-
             tempo.append(T)
             window.fill(WHITE)
-
 
             start = time.time()
             meu_sistema.colisoes_mol()
@@ -425,13 +429,19 @@ def main():
                 list_deri_azul,
             )
 
+            temp = temperatura(meu_sistema, k)
+            list_temp.append(temp)
+            y_dist = FMB(vs, temp, MASSA, k)
             start = time.time()
+
             if v_hist:
                 # hist(meu_sistema.velocidades)
 
-                plot_dist_vel(axs, meu_sistema.velocidades, vs, y_dist)
+                plot_dist_vel(axs, meu_sistema.velocidades(), vs, y_dist)
 
                 # Crie uma imagem a partir dos dados renderizados e desenhe-a na tela do Pygame
+
+                plot_temp(axs, tempo, list_temp)
 
                 plot_quantidade(
                     axs,
@@ -457,6 +467,7 @@ def main():
             T += DT
             np.save(r"fps\tempo.npy", np.array(tempo + [DT]))
             np.save(r"log\tempo.npy", np.array(tempo))
+            np.save(r"log\temperatura.npy", np.array(temp))
             np.save(
                 r"log\quantidade_vermelho.npy",
                 np.array(meu_sistema.quantidade_vermelho_lista),
